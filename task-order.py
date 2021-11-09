@@ -109,14 +109,20 @@ def my_df():
                             'district_coef': 'Применяемый районный коэф-т',
                             'machine_type': 'Вид техники',
                             'machine_number': 'Государственный номер'})
-    return df
+    table_len = len(df)
+    if table_len == 0:
+        status = 'Наряд - задание не содержит событий. Для заполнения выберите пункт "Добавить"'
+        return [status, table_len]
+    else:
+        status = "Все события: "
+        return [status, df]
 
 
 # ______________________________________________________________________________________________________________________
 # МЕНЮ РЕДАКТИРОВАНИЯ событий
 def change_data():
     st.markdown("<hr />", unsafe_allow_html=True)
-    my_table = my_df()
+    my_table = my_df()[1]
     values_selection = st.selectbox('Отсортируйте таблицу по нужному типу работ:',
                                     my_table.iloc[:, 3].unique().tolist())
     selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
@@ -159,10 +165,10 @@ def append_data():
 
 # МЕНЮ УДАЛЕНИЯ событий в df
 def delete_data():
-    my_table = my_df()
+    my_table = my_df()[1]
     st.text("")
     st.text("Отсортируйте таблицу по искомому типу работ:")
-    values_selection = st.selectbox('',my_table.iloc[:, 3].unique().tolist())
+    values_selection = st.selectbox('', my_table.iloc[:, 3].unique().tolist())
     selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
     st.markdown("<hr />", unsafe_allow_html=True)
     st.text("По вашему запросу найдены события: ")
@@ -183,15 +189,11 @@ option_menu = ["Главная страница", "Редактировать", 
 st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
 if main_menu == option_menu[0]:
-    if len(my_df()) == 0:
-        st.info('Наряд - задание пустое. Для заполнения нажмите на кнопку "Добавить новое '
-                'событие"')
-    else:
-        st.write("Все события: ")
-        st.write(my_df())
+    st.write(my_df()[0])
+    st.write(my_df()[1])
     st.markdown("<hr />", unsafe_allow_html=True)
     if len(make_request_non_full()) == 0:
-        st.success('Незавершенные события отсутсвуют')
+        st.success('Незавершенных событий нет')
     else:
         st.write("Незавершенные события: ")
         st.write(make_request_non_full())
