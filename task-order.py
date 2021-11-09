@@ -6,6 +6,11 @@ from datetime import datetime, timedelta
 st.title("Наряд - задание")
 
 
+@st.cache(allow_output_mutation=True)
+def button_states():
+    return {"pressed": None}
+
+
 # передача запроса в БД
 def execute_query(connection, query):
     connection.rollback()
@@ -25,10 +30,8 @@ def request_append(id_event, start_date, end_date, work_type, person_fio_list, d
     query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, "person_FIO", department,
             destination, district_coef, machine_type,machine_number) VALUES """
     for id, person in enumerate(person_fio_list):
-        query += """
-        ((SELECT MAX(id_event) + {} FROM task_order),'{}','{}','{}','{}','{}','{}','{}', '{}', '{}'),""".format(
-            id + 1, start_date, end_date, work_type,
-            str(person), department, destination, district_coef, machine_type, machine_number)
+        query += """((SELECT MAX(counter) + {} FROM(SELECT count(id_event) counter FROM task_order) CO),'{}','{}',
+        '{}','{}','{}','{}','{}', '{}', '{}'),""".format(id + 1, start_date, end_date, work_type,str(person), department, destination, district_coef, machine_type, machine_number)
     # connection.close()
     execute_query(connection, query[:-1])
     st.success('Данные успешно сохранены!')
@@ -46,15 +49,15 @@ def make_request_non_full():
     district_coef='' or machine_type='' or machine_number=''); """
     df_non_full = pd.read_sql(select_non_full, connection)
     df_non_full = df_non_full.rename(columns={'id_event': 'Номер события',
-                                            'start_dates': 'Дата, время начала работы/события',
-                                            'end_dates': 'Дата, время окончания работы/события',
-                                            'work_type': 'Вид выполняемой работы, задания/события',
-                                            'person_FIO': 'ФИО сотрудник(а/ов)',
-                                            'department': 'Пункт оправления',
-                                            'destination': 'Пункт назначения',
-                                            'district_coef': 'Применяемый районный коэф-т',
-                                            'machine_type': 'Вид техники',
-                                            'machine_number': 'Государственный номер'})
+                                              'start_dates': 'Дата, время начала работы/события',
+                                              'end_dates': 'Дата, время окончания работы/события',
+                                              'work_type': 'Вид выполняемой работы, задания/события',
+                                              'person_FIO': 'ФИО сотрудник(а/ов)',
+                                              'department': 'Пункт оправления',
+                                              'destination': 'Пункт назначения',
+                                              'district_coef': 'Применяемый районный коэф-т',
+                                              'machine_type': 'Вид техники',
+                                              'machine_number': 'Государственный номер'})
 
     return df_non_full
 
@@ -168,20 +171,44 @@ def delete_data():
 
 
 # СОЗДАНИЕ МЕНЮ работы с наряд-заданием
-option_menu = ["Главная страница", "Редактировать", "Добавить", "Удалить"]
+option_menu = ["Главная страница", "Редактировать", "Удалить"]
 st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
-if main_menu == option_menu[1]:
+st.sidebar.markdown("<hr />", unsafe_allow_html=True)
+button_append = st.sidebar.button("Добавить новое событие")
+
+is_pressed = button_states()  # gets our cached dictionary
+st.write(is_pressed)
+if button_append:
+    is_pressed.update({"pressed": True})
+if is_pressed["pressed"]:  # saved between sessions
+    append_data()
+elif main_menu == option_menu[0]:
+    if 'key' not in st.session_state:
+        st.session_state['key'] = 'value'
+    if len(my_df()) == 0:
+        st.info('Наряд - задание пустое. Для заполнения нажмите на кнопку "Добавить новое '
+                'событие"')
+    else:
+        st.write("Все события: ")
+        st.write(my_df())
+    st.markdown("<hr />", unsafe_allow_html=True)
+    if len(make_request_non_full()) == 0:
+        st.success('Незавершенные события отсутсвуют')
+    else:
+        st.write("Незавершенные события: ")
+        st.write(make_request_non_full())
+elif main_menu == option_menu[1]:
     change_data()
 elif main_menu == option_menu[2]:
-    append_data()
-elif main_menu == option_menu[3]:
     delete_data()
-else:
-    st.write("Все события: ")
-    st.write(my_df())
-    st.markdown("<hr />", unsafe_allow_html=True)
-    st.write("Незавершенные события: ")
-    st.write(make_request_non_full())
+form = st.form("my_form")
+a = form.slider("Inside the form")
+b=10
+c=a+b
+
+# Now add a submit button to the form:
+form.form_submit_button("{}".format(str(c)))
+
 
 connection.close()
