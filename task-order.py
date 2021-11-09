@@ -6,12 +6,8 @@ from datetime import datetime, timedelta
 st.title("Наряд - задание")
 
 
-@st.cache(allow_output_mutation=True)
-def button_states():
-    return {"pressed": None}
-
-
-# передача запроса в БД
+# ______________________________________________________________________________________________________________________
+# передача ЗАРАНЕЕ НАПИСАННОГО запроса в БД
 def execute_query(connection, query):
     connection.rollback()
     connection.autocommit = True
@@ -24,26 +20,28 @@ def execute_query(connection, query):
         st.error(f"The error '{e}' occurred")
 
 
-# формирования SQL-запроса для добавления инфы в БД
+# формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
 def request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
                    machine_type, machine_number):
     query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, "person_FIO", department,
             destination, district_coef, machine_type,machine_number) VALUES """
     for id, person in enumerate(person_fio_list):
         query += """((SELECT MAX(counter) + {} FROM(SELECT count(id_event) counter FROM task_order) CO),'{}','{}',
-        '{}','{}','{}','{}','{}', '{}', '{}'),""".format(id + 1, start_date, end_date, work_type,str(person), department, destination, district_coef, machine_type, machine_number)
+        '{}','{}','{}','{}','{}', '{}', '{}'),""".format(id + 1, start_date, end_date, work_type, str(person),
+                                                         department, destination, district_coef, machine_type,
+                                                         machine_number)
     # connection.close()
     execute_query(connection, query[:-1])
     st.success('Данные успешно сохранены!')
 
 
-# формирования SQL-запроса для получения всей инфы
+# формирования SQL-запроса (ПОЛУЧЕНИЕ ВСЕЙ инфы в БД)
 def make_request():
     select_from_sql = """SELECT * FROM task_order"""
     return select_from_sql
 
 
-# формирования SQL-запроса для получения инфы по незаполненным строкам
+# формирования SQL-запроса (ПОЛУЧЕНИЕ инфы по недозаполненным событиям в БД)
 def make_request_non_full():
     select_non_full = """select * from task_order where (department='' or 'person_FIO'='' or destination='' or 
     district_coef='' or machine_type='' or machine_number=''); """
@@ -58,11 +56,10 @@ def make_request_non_full():
                                               'district_coef': 'Применяемый районный коэф-т',
                                               'machine_type': 'Вид техники',
                                               'machine_number': 'Государственный номер'})
-
     return df_non_full
 
 
-# формирования SQL-запроса для удаления инфы
+# формирования SQL-запроса (УДАЛЕНИЕ строки по id(номеру события))
 def delete_row_sql(event_number):
     delete_in_sql = """DELETE FROM task_order WHERE id_event='{}'""".format(event_number)
     execute_query(connection, delete_in_sql)
@@ -115,7 +112,8 @@ def my_df():
     return df
 
 
-# МЕНЮ РЕДАКТИРОВАНИЕ событий
+# ______________________________________________________________________________________________________________________
+# МЕНЮ РЕДАКТИРОВАНИЯ событий
 def change_data():
     st.markdown("<hr />", unsafe_allow_html=True)
     my_table = my_df()
@@ -135,16 +133,23 @@ def append_data():
     start_date = st.date_input("Дата старта :", value=None, min_value=date_min, max_value=date_max, key=1)
     end_date = st.date_input("Дата окончания :", value=None, min_value=date_min, max_value=date_max, key=2)
     work_type = st.selectbox('Выберите вид работы:', types_of_work)
+
     st.markdown("<hr />", unsafe_allow_html=True)
+
     person_fio_list = st.multiselect('Выберите сотрудник(а/ов): ', fio_list)
     department = st.text_input('Введите пункт оправления')
     destination = st.text_input('Введите пункт назначения')
+
     st.markdown("<hr />", unsafe_allow_html=True)
+
     district_coef = st.text_input("Введите коэф-т")
     machine_type = st.text_input("Введите тип авто")
     machine_number = st.text_input("Введите номер авто")
-    button = st.button("Добавить информацию")
-    if button:
+    col1, col2, col3,col4 = st.columns(4)
+    button = col4.button("Добавить информацию")
+    if button and len(person_fio_list) == 0:
+        st.error('Для добавления введенной информации укажите ФИО сотрудник(а/ов)')
+    elif button:
         my_table = my_df()
         id_event = len(my_table) + 1
         request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination,
@@ -154,38 +159,30 @@ def append_data():
 
 # МЕНЮ УДАЛЕНИЯ событий в df
 def delete_data():
-    st.markdown("<hr />", unsafe_allow_html=True)
     my_table = my_df()
-    values_selection = st.selectbox('Отсортируйте таблицу по нужному типу работ:',
-                                    my_table.iloc[:, 3].unique().tolist())
+    st.text("")
+    st.text("Отсортируйте таблицу по искомому типу работ:")
+    values_selection = st.selectbox('',my_table.iloc[:, 3].unique().tolist())
     selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
-    st.write("По вашему запросу найдены события: ")
+    st.markdown("<hr />", unsafe_allow_html=True)
+    st.text("По вашему запросу найдены события: ")
     st.write(selected_rows)
     st.markdown("<hr />", unsafe_allow_html=True)
     index_selection = selected_rows.iloc[:, 0]
-    event_number = st.selectbox('Выберите номер события для удаления: ', index_selection.tolist())
-    button = st.button("Удалить выбранное событие")
+    st.text('Выберите номер события для удаления: ')
+    event_number = st.selectbox("", index_selection.tolist())
+    col1, col2, col3 = st.columns(3)
+    button = col3.button("Удалить выбранное событие")
     if button:
         my_table = my_df()
         delete_row_sql(event_number)
 
 
 # СОЗДАНИЕ МЕНЮ работы с наряд-заданием
-option_menu = ["Главная страница", "Редактировать", "Удалить"]
+option_menu = ["Главная страница", "Редактировать", "Удалить", "Добавить"]
 st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
-st.sidebar.markdown("<hr />", unsafe_allow_html=True)
-button_append = st.sidebar.button("Добавить новое событие")
-
-is_pressed = button_states()  # gets our cached dictionary
-st.write(is_pressed)
-if button_append:
-    is_pressed.update({"pressed": True})
-if is_pressed["pressed"]:  # saved between sessions
-    append_data()
-elif main_menu == option_menu[0]:
-    if 'key' not in st.session_state:
-        st.session_state['key'] = 'value'
+if main_menu == option_menu[0]:
     if len(my_df()) == 0:
         st.info('Наряд - задание пустое. Для заполнения нажмите на кнопку "Добавить новое '
                 'событие"')
@@ -202,13 +199,7 @@ elif main_menu == option_menu[1]:
     change_data()
 elif main_menu == option_menu[2]:
     delete_data()
-form = st.form("my_form")
-a = form.slider("Inside the form")
-b=10
-c=a+b
-
-# Now add a submit button to the form:
-form.form_submit_button("{}".format(str(c)))
-
+elif main_menu == option_menu[3]:
+    append_data()
 
 connection.close()
