@@ -94,7 +94,9 @@ connection = create_connection(
     "production", "postgres", "admin228", "192.168.10.12", "5432"
 )
 
-# ВРЕМЕННЫЕ списки + полезные плюшки
+# сессия + ВРЕМЕННЫЕ списки + полезные плюшки
+if "update_str" not in st.session_state:
+    st.session_state.update_str = None
 types_of_work = ["Убытие к месту проведения ТО", "Сдача анализов на ковид", "Проведение ТО", "Получение техники",
                  "Прием техники"]
 fio_list = ["Петров", "Иванов", "Сидоров"]
@@ -132,20 +134,32 @@ def change_data():
     if my_table.empty:
         st.text("В настоящий момент нет доступных для редактирования событий")
     else:
-        st.text("")
-        st.text("Отсортируйте таблицу по искомому типу работ:")
-        values_selection = st.selectbox(' ', my_table.iloc[:, 3].unique().tolist())
+        values_selection = st.selectbox('Отсортируйте таблицу по искомому типу работ: ',
+                                        my_table.iloc[:, 3].unique().tolist())
         selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
         st.markdown("<hr />", unsafe_allow_html=True)
-        st.write("По вашему запросу найдены события: ")
+        st.write("**По вашему запросу найдены события: **")
         st.write(selected_rows)
         st.markdown("<hr />", unsafe_allow_html=True)
         index_selection = selected_rows.iloc[:, 0]
-        st.text('Выберите номер события для редактирования: ')
-        event_number = st.selectbox(' ', index_selection.tolist())
-        st.markdown("<hr />", unsafe_allow_html=True)
-        col1, col2, col3, col4 = st.columns(4)
-        col4.button("Внести изменения")
+        coll1, coll2 = st.columns(2)
+        coll1.write("**Выберите № события для редактирования: **")
+        event_number = coll1.selectbox('', index_selection.tolist())
+        coll1.markdown("<hr />", unsafe_allow_html=True)
+        st.write("**Для редактирования выбрано событие: **")
+        st.table(my_table[my_table["Номер события"] == int(event_number)])
+        if st.button("Перейти к редактированию {}-ого события".format(event_number)):
+            st.session_state.update_str = "Start_edit"
+        if st.session_state.update_str == "Start_edit":
+            st.markdown("<hr />", unsafe_allow_html=True)
+            st.title("Заполните поля ниже:")
+            st.text("")
+            select_column = st.selectbox('Выберите столбец, значение которого нужно изменить: ', my_table.columns)
+            st.text("")
+            st.write("Введите/выберите новое значение в ячейке ниже: ")
+            new_value = st.text_input("")
+            st.text("")
+            st.button("Внести изменения")
 
 
 # МЕНЮ ДОБАВЛЕНИЯ событий
