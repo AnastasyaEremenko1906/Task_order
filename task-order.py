@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 st.title("Наряд - задание")
 st.text("")
 
+
 # ______________________________________________________________________________________________________________________
 # передача ЗАРАНЕЕ НАПИСАННОГО запроса в БД
 def execute_query(connection, query):
@@ -118,7 +119,7 @@ def my_df():
     table_len = len(df)
     if table_len == 0:
         status = 'Наряд - задание не содержит событий. Для заполнения выберите пункт "Добавить"'
-        return [status, '']
+        return [status, df]
     else:
         status = "Все события: "
         return [status, df]
@@ -127,19 +128,24 @@ def my_df():
 # ______________________________________________________________________________________________________________________
 # МЕНЮ РЕДАКТИРОВАНИЯ событий
 def change_data():
-
     my_table = my_df()[1]
-    st.text("")
-    values_selection = st.selectbox('Отсортируйте таблицу по нужному типу работ:',
-                                    my_table.iloc[:, 3].unique().tolist())
-    selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
-    st.markdown("<hr />", unsafe_allow_html=True)
-    st.write("По вашему запросу найдены события: ")
-    st.write(selected_rows)
-    st.markdown("<hr />", unsafe_allow_html=True)
-    index_selection = selected_rows.iloc[:, 0]
-    event_number = st.selectbox('Выберите номер события для редактирования: ', index_selection.tolist())
-    st.button("Внести изменения")
+    if my_table.empty:
+        st.text("В настоящий момент нет доступных для редактирования событий")
+    else:
+        st.text("")
+        st.text("Отсортируйте таблицу по искомому типу работ:")
+        values_selection = st.selectbox(' ', my_table.iloc[:, 3].unique().tolist())
+        selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
+        st.markdown("<hr />", unsafe_allow_html=True)
+        st.write("По вашему запросу найдены события: ")
+        st.write(selected_rows)
+        st.markdown("<hr />", unsafe_allow_html=True)
+        index_selection = selected_rows.iloc[:, 0]
+        st.text('Выберите номер события для редактирования: ')
+        event_number = st.selectbox(' ', index_selection.tolist())
+        st.markdown("<hr />", unsafe_allow_html=True)
+        col1, col2, col3, col4 = st.columns(4)
+        col4.button("Внести изменения")
 
 
 # МЕНЮ ДОБАВЛЕНИЯ событий
@@ -159,7 +165,7 @@ def append_data():
     district_coef = st.text_input("Введите коэф-т")
     machine_type = st.text_input("Введите тип авто")
     machine_number = st.text_input("Введите номер авто")
-    col1, col2, col3,col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
     button = col4.button("Добавить информацию")
     if button and len(person_fio_list) == 0:
         st.error('Для добавления введенной информации укажите ФИО сотрудник(а/ов)')
@@ -174,22 +180,25 @@ def append_data():
 # МЕНЮ УДАЛЕНИЯ событий в df
 def delete_data():
     my_table = my_df()[1]
-    st.text("")
-    st.text("Отсортируйте таблицу по искомому типу работ:")
-    values_selection = st.selectbox('', my_table.iloc[:, 3].unique().tolist())
-    selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
-    st.markdown("<hr />", unsafe_allow_html=True)
-    st.text("По вашему запросу найдены события: ")
-    st.write(selected_rows)
-    st.markdown("<hr />", unsafe_allow_html=True)
-    index_selection = selected_rows.iloc[:, 0]
-    st.text('Выберите номер события для удаления: ')
-    event_number = st.selectbox("", index_selection.tolist())
-    col1, col2, col3 = st.columns(3)
-    button = col3.button("Удалить выбранное событие")
-    if button:
-        my_table = my_df()
-        delete_row_sql(event_number)
+    if my_table.empty:
+        st.text("В настоящий момент нет доступных для удаления событий")
+    else:
+        st.text("")
+        st.text("Отсортируйте таблицу по искомому типу работ:")
+        values_selection = st.selectbox('', my_table.iloc[:, 3].unique().tolist())
+        selected_rows = my_table[my_table.iloc[:, 3] == values_selection]
+        st.markdown("<hr />", unsafe_allow_html=True)
+        st.text("По вашему запросу найдены события: ")
+        st.write(selected_rows)
+        st.markdown("<hr />", unsafe_allow_html=True)
+        index_selection = selected_rows.iloc[:, 0]
+        st.text('Выберите номер события для удаления: ')
+        event_number = st.selectbox("", index_selection.tolist())
+        col1, col2, col3 = st.columns(3)
+        button = col3.button("Удалить выбранное событие")
+        if button:
+            my_table = my_df()
+            delete_row_sql(event_number)
 
 
 # СОЗДАНИЕ МЕНЮ работы с наряд-заданием
@@ -197,8 +206,11 @@ option_menu = ["Главная страница", "Редактировать", 
 st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
 if main_menu == option_menu[0]:
-    st.write(my_df()[0])
-    st.write(my_df()[1])
+    if my_df()[0] == "Все события: ":
+        st.write(my_df()[0])
+        st.write(my_df()[1])
+    else:
+        st.write(my_df()[0])
     st.markdown("<hr />", unsafe_allow_html=True)
     st.write(make_request_non_full()[0])
     st.write(make_request_non_full()[1])
