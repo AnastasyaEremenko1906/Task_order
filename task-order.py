@@ -22,11 +22,11 @@ def execute_query(connection, query):
         st.error(f"The error '{e}' occurred")
 
 
+
 # формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
 def request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
                    machine_type, machine_number):
     list_of_works = """select id from types_of_work where types_of_work='{}'""".format(work_type)
-    st.write(list_of_works)
     id_of_work = pd.read_sql(list_of_works, connection)
     id_of_work = id_of_work.iat[0,0]
 
@@ -52,6 +52,8 @@ def make_request_non_full():
     select_non_full = """SELECT * FROM task_order taskor JOIN types_of_work typesw ON taskor.work_type = typesw.id 
     where (department='' or person_fio='' or destination='' or district_coef='' or machine_type='' or machine_number='');"""
     df_non_full = pd.read_sql(select_non_full, connection)
+    df_non_full = df_non_full.loc[:, ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
+                    'district_coef', 'machine_type', 'machine_number']]
     df_non_full = df_non_full.rename(columns={'id_event': 'Номер события',
                                               'start_dates': 'Дата, время начала работы/события',
                                               'end_dates': 'Дата, время окончания работы/события',
@@ -219,11 +221,14 @@ def append_data():
     if button and len(person_fio_list) == 0:
         st.error('Для добавления введенной информации укажите ФИО сотрудника')
     elif button:
-        my_table = my_df()
-        id_event = len(my_table) + 1
-        request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination,
-                       district_coef,
-                       machine_type, machine_number)
+        try:
+            my_table = my_df()
+            id_event = len(my_table) + 1
+            request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination,
+                           district_coef,
+                           machine_type, machine_number)
+        except psycopg2.errors.UniqueViolation:
+            st.error("Такое событие уже есть в базе")
 
 
 # МЕНЮ УДАЛЕНИЯ событий в df
