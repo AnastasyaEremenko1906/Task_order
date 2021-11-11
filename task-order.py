@@ -24,10 +24,10 @@ def execute_query(connection, query):
 # формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
 def request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
                    machine_type, machine_number):
-    query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, "person_FIO", department,
+    query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, person_fio, department,
             destination, district_coef, machine_type,machine_number) VALUES """
     for id, person in enumerate(person_fio_list):
-        query += """((SELECT MAX(counter) + {} FROM(SELECT count(id_event) counter FROM task_order) CO),'{}','{}',
+        query += """((SELECT MAX(id_event) + {} FROM task_order),'{}','{}',
         '{}','{}','{}','{}','{}', '{}', '{}'),""".format(id + 1, start_date, end_date, work_type, str(person),
                                                          department, destination, district_coef, machine_type,
                                                          machine_number)
@@ -44,14 +44,14 @@ def make_request():
 
 # формирования SQL-запроса (ПОЛУЧЕНИЕ инфы по недозаполненным событиям в БД)
 def make_request_non_full():
-    select_non_full = """select * from task_order where (department='' or 'person_FIO'='' or destination='' or 
+    select_non_full = """select * from task_order where (department='' or person_fio='' or destination='' or 
     district_coef='' or machine_type='' or machine_number=''); """
     df_non_full = pd.read_sql(select_non_full, connection)
     df_non_full = df_non_full.rename(columns={'id_event': 'Номер события',
                                               'start_dates': 'Дата, время начала работы/события',
                                               'end_dates': 'Дата, время окончания работы/события',
                                               'work_type': 'Вид выполняемой работы, задания/события',
-                                              'person_FIO': 'ФИО сотрудник(а/ов)',
+                                              'person_fio': 'ФИО сотрудник(а/ов)',
                                               'department': 'Пункт оправления',
                                               'destination': 'Пункт назначения',
                                               'district_coef': 'Применяемый районный коэф-т',
@@ -71,6 +71,16 @@ def delete_row_sql(event_number):
     delete_in_sql = """DELETE FROM task_order WHERE id_event='{}'""".format(event_number)
     execute_query(connection, delete_in_sql)
     st.success('Данные успешно удалены!')
+
+
+# формирования SQL-запроса (РЕДАКТИРОВАНИЕ элемента)
+def change_value_sql(event_number, select_column, new_value):
+    change_value_sql = """UPDATE task_order SET {} = '{}' WHERE id_event = '{}'""".format((dict_streamlit_to_sql
+                                                                                          .get(select_column)),
+                                                                                          new_value, event_number)
+    st.write(change_value_sql)
+    execute_query(connection, change_value_sql)
+    st.success('Данные успешно изменены! Для просмотра обновленной информации перейдите на главную страницу')
 
 
 # подключение к БД
@@ -97,9 +107,20 @@ connection = create_connection(
 # сессия + ВРЕМЕННЫЕ списки + полезные плюшки
 if "update_str" not in st.session_state:
     st.session_state.update_str = None
+# ___________________________
 types_of_work = ["Убытие к месту проведения ТО", "Сдача анализов на ковид", "Проведение ТО", "Получение техники",
                  "Прием техники"]
 fio_list = ["Петров", "Иванов", "Сидоров"]
+# ___________________________
+names_in_sql = ['id_event', 'start_dates', 'end_dates', 'work_type', 'person_fio', 'department', 'destination',
+                'district_coef', 'machine_type', 'machine_number']
+names_in_streamlit = ['Номер события', 'Дата, время начала работы/события', 'Дата, время окончания работы/события',
+                      'Вид выполняемой работы, задания/события', 'ФИО сотрудник(а/ов)', 'Пункт оправления',
+                      'Пункт назначения', 'Применяемый районный коэф-т', 'Вид техники', 'Государственный номер']
+dict_streamlit_to_sql = dict(zip(names_in_streamlit, names_in_sql))
+dict_sql_to_streamlit = dict(zip(names_in_sql, names_in_streamlit))
+
+# ___________________________
 date_today = datetime.today()
 date_min = date_today - timedelta(days=30)
 date_max = date_today + timedelta(days=30)
@@ -112,7 +133,7 @@ def my_df():
                             'start_dates': 'Дата, время начала работы/события',
                             'end_dates': 'Дата, время окончания работы/события',
                             'work_type': 'Вид выполняемой работы, задания/события',
-                            'person_FIO': 'ФИО сотрудник(а/ов)',
+                            'person_fio': 'ФИО сотрудник(а/ов)',
                             'department': 'Пункт оправления',
                             'destination': 'Пункт назначения',
                             'district_coef': 'Применяемый районный коэф-т',
@@ -159,7 +180,9 @@ def change_data():
             st.write("Введите/выберите новое значение в ячейке ниже: ")
             new_value = st.text_input("")
             st.text("")
-            st.button("Внести изменения")
+            st.write(new_value)
+            if st.button("Внести изменения"):
+                change_value_sql(event_number, select_column, new_value)
 
 
 # МЕНЮ ДОБАВЛЕНИЯ событий
