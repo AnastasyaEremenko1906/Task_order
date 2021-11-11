@@ -78,7 +78,6 @@ def change_value_sql(event_number, select_column, new_value):
     change_value_sql = """UPDATE task_order SET {} = '{}' WHERE id_event = '{}'""".format((dict_streamlit_to_sql
                                                                                           .get(select_column)),
                                                                                           new_value, event_number)
-    st.write(change_value_sql)
     execute_query(connection, change_value_sql)
     st.success('Данные успешно изменены! Для просмотра обновленной информации перейдите на главную страницу')
 
@@ -175,14 +174,14 @@ def change_data():
             st.markdown("<hr />", unsafe_allow_html=True)
             st.title("Заполните поля ниже:")
             st.text("")
-            select_column = st.selectbox('Выберите столбец, значение которого нужно изменить: ', my_table.columns)
+            select_column = st.selectbox('Выберите столбец, значение которого нужно изменить: ', my_table.columns[1:])
             st.text("")
             st.write("Введите/выберите новое значение в ячейке ниже: ")
             new_value = st.text_input("")
             st.text("")
-            st.write(new_value)
             if st.button("Внести изменения"):
                 change_value_sql(event_number, select_column, new_value)
+                st.session_state.update_str = "End_edit"
 
 
 # МЕНЮ ДОБАВЛЕНИЯ событий
