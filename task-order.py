@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Наряд-задание", page_icon='📚')
 st.title("Наряд - задание")
 st.text("")
+
+
 # ______________________________________________________________________________________________________________________
 # передача ЗАРАНЕЕ НАПИСАННОГО запроса в БД
 def execute_query(connection, query):
@@ -21,19 +23,19 @@ def execute_query(connection, query):
 
 
 # формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
-def request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
-                   machine_type, machine_number):
+def request_append(start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
+                   machine_type, machine_number, any_comment):
     list_of_works = """select id from types_of_work where types_of_work='{}'""".format(work_type)
     id_of_work = pd.read_sql(list_of_works, connection)
+    # получаю df из 1 строки и столца; далее извлекаю значение на пересечении строки/столбца для получения № работы
     id_of_work = id_of_work.iat[0, 0]
 
-    query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, person_fio, department,
-            destination, district_coef, machine_type,machine_number) VALUES """
-    query += """((SELECT MAX(id_event) + 1 FROM task_order),'{}','{}',
-            '{}','{}','{}','{}','{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
-                                                             str(person_fio_list),
-                                                             department, destination, district_coef, machine_type,
-                                                             machine_number)
+    query = """INSERT INTO task_order (start_dates, end_dates, work_type, person_fio, department,
+            destination, district_coef, machine_type,machine_number, any_comment) VALUES """
+    query += """('{}','{}','{}','{}','{}','{}','{}', '{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
+                                                                   str(person_fio_list),department, destination,
+                                                                   district_coef, machine_type,
+                                                                   machine_number, any_comment)
     # connection.close()
     execute_query(connection, query[:-1])
     st.success('Данные успешно сохранены!')
@@ -52,7 +54,7 @@ def make_request_non_full():
     df_non_full = pd.read_sql(select_non_full, connection)
     df_non_full = df_non_full.loc[:,
                   ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
-                   'district_coef', 'machine_type', 'machine_number']]
+                   'district_coef', 'machine_type', 'machine_number', 'any_comment']]
     df_non_full = df_non_full.rename(columns={'id_event': '№ события',
                                               'start_dates': 'Дата начала',
                                               'end_dates': 'Дата окончания',
@@ -62,7 +64,8 @@ def make_request_non_full():
                                               'destination': 'Пункт назначения',
                                               'district_coef': 'Районный коэф-т',
                                               'machine_type': 'Вид техники',
-                                              'machine_number': 'Государственный номер'})
+                                              'machine_number': 'Государственный номер',
+                                              'any_comment': 'Комментарий'})
     table_len = len(df_non_full)
     if table_len == 0:
         status = 'Незавершенных событий нет'
@@ -126,10 +129,11 @@ types_of_work = list_of_works()
 fio_list = ["Петров", "Иванов", "Сидоров", "Козлов"]
 # ___________________________
 names_in_sql = ['id_event', 'start_dates', 'end_dates', 'work_type', 'person_fio', 'department', 'destination',
-                'district_coef', 'machine_type', 'machine_number']
+                'district_coef', 'machine_type', 'machine_number', 'any_comment']
 names_in_streamlit = ['№ события', 'Дата начала', 'Дата окончания',
                       'Вид работы', 'ФИО сотрудника', 'Пункт оправления',
-                      'Пункт назначения', 'Применяемый районный коэф-т', 'Вид техники', 'Государственный номер']
+                      'Пункт назначения', 'Применяемый районный коэф-т', 'Вид техники', 'Государственный номер',
+                      'Комментарий']
 dict_streamlit_to_sql = dict(zip(names_in_streamlit, names_in_sql))
 dict_sql_to_streamlit = dict(zip(names_in_sql, names_in_streamlit))
 
@@ -143,7 +147,7 @@ date_max = date_today + timedelta(days=30)
 def my_df():
     df = pd.read_sql(make_request(), connection)
     df = df.loc[:, ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
-                    'district_coef', 'machine_type', 'machine_number']]
+                    'district_coef', 'machine_type', 'machine_number', 'any_comment']]
     df = df.rename(columns={'id_event': '№ события',
                             'start_dates': 'Дата начала',
                             'end_dates': 'Дата окончания',
@@ -153,7 +157,8 @@ def my_df():
                             'destination': 'Пункт назначения',
                             'district_coef': 'Районный коэф-т',
                             'machine_type': 'Вид техники',
-                            'machine_number': 'Государственный номер'})
+                            'machine_number': 'Государственный номер',
+                            'any_comment': 'Комментарий'})
     table_len = len(df)
     if table_len == 0:
         status = 'Наряд - задание не содержит событий. Для заполнения выберите пункт "Добавить"'
@@ -220,6 +225,9 @@ def append_data():
     district_coef = st.text_input("Введите коэф-т")
     machine_type = st.text_input("Введите тип авто")
     machine_number = st.text_input("Введите номер авто")
+
+    st.markdown("<hr />", unsafe_allow_html=True)
+    any_comment = st.text_input("Введите комментарий к событию (если это необходимо)")
     col1, col2, col3, col4 = st.columns(4)
     button = col4.button("Добавить информацию")
     if button and len(person_fio_list) == 0:
@@ -227,10 +235,9 @@ def append_data():
     elif button:
         try:
             my_table = my_df()
-            id_event = len(my_table) + 1
-            request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination,
+            request_append(start_date, end_date, work_type, person_fio_list, department, destination,
                            district_coef,
-                           machine_type, machine_number)
+                           machine_type, machine_number, any_comment)
         except psycopg2.errors.UniqueViolation:
             st.error("Такое событие уже есть в базе")
 
