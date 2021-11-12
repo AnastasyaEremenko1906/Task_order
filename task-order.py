@@ -2,12 +2,10 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 from datetime import datetime, timedelta
-from openpyxl import Workbook
 
+st.set_page_config(page_title="Наряд-задание", page_icon='📚')
 st.title("Наряд - задание")
 st.text("")
-
-
 # ______________________________________________________________________________________________________________________
 # передача ЗАРАНЕЕ НАПИСАННОГО запроса в БД
 def execute_query(connection, query):
@@ -27,12 +25,13 @@ def request_append(id_event, start_date, end_date, work_type, person_fio_list, d
                    machine_type, machine_number):
     list_of_works = """select id from types_of_work where types_of_work='{}'""".format(work_type)
     id_of_work = pd.read_sql(list_of_works, connection)
-    id_of_work = id_of_work.iat[0,0]
+    id_of_work = id_of_work.iat[0, 0]
 
     query = """INSERT INTO task_order (id_event, start_dates, end_dates, work_type, person_fio, department,
             destination, district_coef, machine_type,machine_number) VALUES """
     query += """((SELECT MAX(id_event) + 1 FROM task_order),'{}','{}',
-            '{}','{}','{}','{}','{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work), str(person_fio_list),
+            '{}','{}','{}','{}','{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
+                                                             str(person_fio_list),
                                                              department, destination, district_coef, machine_type,
                                                              machine_number)
     # connection.close()
@@ -51,16 +50,17 @@ def make_request_non_full():
     select_non_full = """SELECT * FROM task_order taskor JOIN types_of_work typesw ON taskor.work_type = typesw.id 
     where (department='' or person_fio='' or destination='' or district_coef='' or machine_type='' or machine_number='');"""
     df_non_full = pd.read_sql(select_non_full, connection)
-    df_non_full = df_non_full.loc[:, ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
-                    'district_coef', 'machine_type', 'machine_number']]
-    df_non_full = df_non_full.rename(columns={'id_event': 'Номер события',
-                                              'start_dates': 'Дата, время начала работы/события',
-                                              'end_dates': 'Дата, время окончания работы/события',
-                                              'types_of_work': 'Вид выполняемой работы, задания/события',
-                                              'person_fio': 'ФИО сотрудник(а/ов)',
+    df_non_full = df_non_full.loc[:,
+                  ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
+                   'district_coef', 'machine_type', 'machine_number']]
+    df_non_full = df_non_full.rename(columns={'id_event': '№ события',
+                                              'start_dates': 'Дата начала',
+                                              'end_dates': 'Дата окончания',
+                                              'types_of_work': 'Вид работы',
+                                              'person_fio': 'ФИО сотрудника',
                                               'department': 'Пункт оправления',
                                               'destination': 'Пункт назначения',
-                                              'district_coef': 'Применяемый районный коэф-т',
+                                              'district_coef': 'Районный коэф-т',
                                               'machine_type': 'Вид техники',
                                               'machine_number': 'Государственный номер'})
     table_len = len(df_non_full)
@@ -86,7 +86,8 @@ def change_value_sql(event_number, select_column, new_value):
                                                                                           new_value, event_number)
     execute_query(connection, change_value_sql)
     st.success('Данные успешно изменены!')
-    st.info('Для просмотра обновленной информации перейдите на главную страницу либо нажмите на кнопку "Перейти к редактированию"')
+    st.info(
+        'Для просмотра обновленной информации перейдите на главную страницу либо нажмите на кнопку "Перейти к редактированию"')
 
 
 # формирования SQL-запроса (ПОЛУЧЕНИЕ списка работ)
@@ -126,8 +127,8 @@ fio_list = ["Петров", "Иванов", "Сидоров", "Козлов"]
 # ___________________________
 names_in_sql = ['id_event', 'start_dates', 'end_dates', 'work_type', 'person_fio', 'department', 'destination',
                 'district_coef', 'machine_type', 'machine_number']
-names_in_streamlit = ['Номер события', 'Дата, время начала работы/события', 'Дата, время окончания работы/события',
-                      'Вид выполняемой работы, задания/события', 'ФИО сотрудник(а/ов)', 'Пункт оправления',
+names_in_streamlit = ['№ события', 'Дата начала', 'Дата окончания',
+                      'Вид работы', 'ФИО сотрудника', 'Пункт оправления',
                       'Пункт назначения', 'Применяемый районный коэф-т', 'Вид техники', 'Государственный номер']
 dict_streamlit_to_sql = dict(zip(names_in_streamlit, names_in_sql))
 dict_sql_to_streamlit = dict(zip(names_in_sql, names_in_streamlit))
@@ -143,14 +144,14 @@ def my_df():
     df = pd.read_sql(make_request(), connection)
     df = df.loc[:, ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'person_fio', 'department', 'destination',
                     'district_coef', 'machine_type', 'machine_number']]
-    df = df.rename(columns={'id_event': 'Номер события',
-                            'start_dates': 'Дата, время начала работы/события',
-                            'end_dates': 'Дата, время окончания работы/события',
-                            'types_of_work': 'Вид выполняемой работы, задания/события',
-                            'person_fio': 'ФИО сотрудник(а/ов)',
+    df = df.rename(columns={'id_event': '№ события',
+                            'start_dates': 'Дата начала',
+                            'end_dates': 'Дата окончания',
+                            'types_of_work': 'Вид работы',
+                            'person_fio': 'ФИО сотрудника',
                             'department': 'Пункт оправления',
                             'destination': 'Пункт назначения',
-                            'district_coef': 'Применяемый районный коэф-т',
+                            'district_coef': 'Районный коэф-т',
                             'machine_type': 'Вид техники',
                             'machine_number': 'Государственный номер'})
     table_len = len(df)
@@ -182,7 +183,7 @@ def change_data():
         event_number = coll1.selectbox('', index_selection.tolist())
         coll1.markdown("<hr />", unsafe_allow_html=True)
         st.write("**Для редактирования выбрано событие: **")
-        st.table(my_table[my_table["Номер события"] == int(event_number)])
+        st.table(my_table[my_table["№ события"] == int(event_number)])
         if st.button("Перейти к редактированию {}-ого события".format(event_number)):
             st.session_state.update_str = "Start_edit"
         if st.session_state.update_str == "Start_edit":
@@ -249,7 +250,7 @@ def delete_data():
         st.write(selected_rows)
         st.markdown("<hr />", unsafe_allow_html=True)
         index_selection = selected_rows.iloc[:, 0]
-        st.text('Выберите номер события для удаления: ')
+        st.text('Выберите № события для удаления: ')
         event_number = st.selectbox("", index_selection.tolist())
         col1, col2, col3 = st.columns(3)
         button = col3.button("Удалить выбранное событие")
