@@ -22,7 +22,6 @@ def execute_query(connection, query):
         st.error(f"The error '{e}' occurred")
 
 
-
 # формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
 def request_append(id_event, start_date, end_date, work_type, person_fio_list, department, destination, district_coef,
                    machine_type, machine_number):
@@ -86,7 +85,8 @@ def change_value_sql(event_number, select_column, new_value):
                                                                                            .get(select_column)),
                                                                                           new_value, event_number)
     execute_query(connection, change_value_sql)
-    st.success('Данные успешно изменены! Для просмотра обновленной информации перейдите на главную страницу')
+    st.success('Данные успешно изменены!')
+    st.info('Для просмотра обновленной информации перейдите на главную страницу либо нажмите на кнопку "Перейти к редактированию"')
 
 
 # формирования SQL-запроса (ПОЛУЧЕНИЕ списка работ)
@@ -192,7 +192,10 @@ def change_data():
             select_column = st.selectbox('Выберите столбец, значение которого нужно изменить: ', my_table.columns[1:])
             st.text("")
             st.write("Введите/выберите новое значение в ячейке ниже: ")
-            new_value = st.text_input("")
+            if select_column == my_table.columns[1] or select_column == my_table.columns[2]:
+                new_value = st.date_input("", value=None, min_value=date_min, max_value=date_max, key=3)
+            else:
+                new_value = st.text_input("")
             st.text("")
             if st.button("Внести изменения"):
                 change_value_sql(event_number, select_column, new_value)
