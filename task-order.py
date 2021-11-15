@@ -60,7 +60,7 @@ def make_request():
 def make_request_non_full():
     select_non_full = """SELECT * FROM task_order taskor JOIN types_of_work typesw ON taskor.work_type = typesw.id
                                                          JOIN fio_person fio ON taskor.person_fio = fio.id_person 
-    where (department='' or destination='' or district_coef='' or machine_type='' or machine_number='');"""
+    where (department='' or destination='' or machine_type='' or machine_number='');"""
     df_non_full = pd.read_sql(select_non_full, connection)
     df_non_full = df_non_full.loc[:,
                   ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'fio', 'department', 'destination',
