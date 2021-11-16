@@ -170,7 +170,6 @@ date_min = date_today - timedelta(days=30)
 date_max = date_today + timedelta(days=30)
 
 
-
 # считываю df, редактирую названия столбцов
 def my_df():
     df = pd.read_sql(make_request(), connection)
@@ -305,44 +304,44 @@ st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
 if main_menu == option_menu[0]:
     if my_df()[0] == "Все события: ":
-        col1,col2,col3,col4 = st.columns(4)
-        form_filter = st.form('Параметры фильтра')
-        cond_1 = col1.checkbox("По дате старта")
-        cond_2 = col2.checkbox("По дате финиша")
-        cond_3 = col3.checkbox("По виду работ")
-        cond_4 = col4.checkbox("По ФИО")
-        with form_filter:
-            col_form_filter_1, col_form_filter_2 = st.columns(2)
-            # filtering_on = st.button("Отфильтровать таблицу")
-            # filtering_off = st.button("Снять фильтры")
-            if cond_1:
-                start_date = col_form_filter_1.date_input("Выберите дату старта :", value=None, min_value=date_min, max_value=date_max,
-                                         key=4)
-            if cond_2:
-                end_date = col_form_filter_1.date_input("Выберите дату окончания :", value=None, min_value=date_min, max_value=date_max,
-                                       key=4)
-            if cond_3:
-                person_fio_list = col_form_filter_2.selectbox('Выберите сотрудника: ', fio_list)
-            if cond_4:
-                work_type = col_form_filter_2.selectbox('Выберите вид работы:', types_of_work)
-            apply_filter = st.form_submit_button('Применить фильтр(ы)')
-            if apply_filter:
-                st.write(my_df()[0])
-                st.write(my_df()[1])
-
-
-
-        # if filtering_on:
-        #     st.session_state.update_str = "Start_filtering"
-        # if st.session_state.update_str == "Start_filtering":
-
-        # if filtering_off:
-        #     st.session_state.update_str = "Off_filtering"
+        choice_filter = st.radio("", ['Показать все события', 'Показать определенные события'])
+        if choice_filter == "Показать все события":
+            st.write(my_df()[0])
+            st.write(my_df()[1])
+            st.markdown("<hr />", unsafe_allow_html=True)
+            st.write(make_request_non_full()[0])
+            st.write(make_request_non_full()[1])
+        elif choice_filter == "Показать определенные события":
+            st.write("Отфильтруйте события:")
+            col1, col2, col3, col4 = st.columns(4)
+            form_filter = st.form('Параметры фильтра')
+            cond_1 = col1.checkbox("По дате старта")
+            cond_2 = col2.checkbox("По дате финиша")
+            cond_3 = col3.checkbox("По ФИО")
+            cond_4 = col4.checkbox("По виду работ")
+            with form_filter:
+                col_form_filter_1, col_form_filter_2 = st.columns(2)
+                if cond_1:
+                    start_date = col_form_filter_1.date_input("Выберите дату старта :", value=None, min_value=date_min,
+                                                              max_value=date_max,
+                                                              key=4)
+                if cond_2:
+                    end_date = col_form_filter_1.date_input("Выберите дату окончания :", value=None, min_value=date_min,
+                                                            max_value=date_max,
+                                                            key=4)
+                if cond_3:
+                    person_fio_list = col_form_filter_1.selectbox('Выберите сотрудника: ', fio_list)
+                if cond_4:
+                    work_type = col_form_filter_1.selectbox('Выберите вид работы:', types_of_work)
+                apply_filter = st.form_submit_button('Применить фильтр(ы)')
+                if apply_filter:
+                    st.write(my_df()[0])
+                    st.write(my_df()[1])
     else:
         st.write(my_df()[0])
-    st.markdown("<hr />", unsafe_allow_html=True)
-    st.write(make_request_non_full()[0])
-    st.write(make_request_non_full()[1])
+        st.markdown("<hr />", unsafe_allow_html=True)
+        st.write(make_request_non_full()[0])
+        st.write(make_request_non_full()[1])
 elif main_menu == option_menu[1]:
     change_data()
 elif main_menu == option_menu[2]:
