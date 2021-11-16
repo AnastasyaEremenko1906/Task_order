@@ -41,9 +41,10 @@ def request_append(start_date, end_date, work_type, person_fio_list, department,
     query = """INSERT INTO task_order (start_dates, end_dates, work_type, person_fio, department,
             destination, district_coef, machine_type,machine_number, any_comment) VALUES """
     query += """('{}','{}','{}','{}','{}','{}','{}', '{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
-                                                                   int(id_of_fio),department, destination,
-                                                                   district_coef, machine_type,
-                                                                   machine_number, any_comment)
+                                                                                  int(id_of_fio), department,
+                                                                                  destination,
+                                                                                  district_coef, machine_type,
+                                                                                  machine_number, any_comment)
     # connection.close()
     execute_query(connection, query[:-1])
     st.success('Данные успешно сохранены!')
@@ -167,6 +168,7 @@ dict_sql_to_streamlit = dict(zip(names_in_sql, names_in_streamlit))
 date_today = datetime.today()
 date_min = date_today - timedelta(days=30)
 date_max = date_today + timedelta(days=30)
+
 
 
 # считываю df, редактирую названия столбцов
@@ -303,8 +305,39 @@ st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
 if main_menu == option_menu[0]:
     if my_df()[0] == "Все события: ":
-        st.write(my_df()[0])
-        st.write(my_df()[1])
+        col1,col2,col3,col4 = st.columns(4)
+        form_filter = st.form('Параметры фильтра')
+        cond_1 = col1.checkbox("По дате старта")
+        cond_2 = col2.checkbox("По дате финиша")
+        cond_3 = col3.checkbox("По виду работ")
+        cond_4 = col4.checkbox("По ФИО")
+        with form_filter:
+            col_form_filter_1, col_form_filter_2 = st.columns(2)
+            # filtering_on = st.button("Отфильтровать таблицу")
+            # filtering_off = st.button("Снять фильтры")
+            if cond_1:
+                start_date = col_form_filter_1.date_input("Выберите дату старта :", value=None, min_value=date_min, max_value=date_max,
+                                         key=4)
+            if cond_2:
+                end_date = col_form_filter_1.date_input("Выберите дату окончания :", value=None, min_value=date_min, max_value=date_max,
+                                       key=4)
+            if cond_3:
+                person_fio_list = col_form_filter_2.selectbox('Выберите сотрудника: ', fio_list)
+            if cond_4:
+                work_type = col_form_filter_2.selectbox('Выберите вид работы:', types_of_work)
+            apply_filter = st.form_submit_button('Применить фильтр(ы)')
+            if apply_filter:
+                st.write(my_df()[0])
+                st.write(my_df()[1])
+
+
+
+        # if filtering_on:
+        #     st.session_state.update_str = "Start_filtering"
+        # if st.session_state.update_str == "Start_filtering":
+
+        # if filtering_off:
+        #     st.session_state.update_str = "Off_filtering"
     else:
         st.write(my_df()[0])
     st.markdown("<hr />", unsafe_allow_html=True)
