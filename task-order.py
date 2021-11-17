@@ -109,8 +109,8 @@ def change_value_sql(event_number, select_column, new_value):
                                                                                           new_value, event_number)
     execute_query(connection, change_value_sql)
     st.success('Данные успешно изменены!')
-    st.info(
-        'Для просмотра обновленной информации перейдите на главную страницу либо нажмите на кнопку "Перейти к редактированию"')
+    st.info('Для просмотра обновленной информации перейдите на главную страницу либо нажмите на кнопку "Перейти к '
+            'редактированию"')
 
 
 # формирования SQL-запроса (ПОЛУЧЕНИЕ списка работ)
@@ -325,18 +325,37 @@ if main_menu == option_menu[0]:
                     start_date = col_form_filter_1.date_input("Выберите дату старта :", value=None, min_value=date_min,
                                                               max_value=date_max,
                                                               key=4)
+                else:
+                    start_date = False
                 if cond_2:
                     end_date = col_form_filter_1.date_input("Выберите дату окончания :", value=None, min_value=date_min,
                                                             max_value=date_max,
                                                             key=4)
+                else:
+                    end_date = False
                 if cond_3:
                     person_fio_list = col_form_filter_1.selectbox('Выберите сотрудника: ', fio_list)
+                else:
+                    person_fio_list = False
                 if cond_4:
                     work_type = col_form_filter_1.selectbox('Выберите вид работы:', types_of_work)
+                else:
+                    work_type = False
                 apply_filter = st.form_submit_button('Применить фильтр(ы)')
                 if apply_filter:
-                    st.write(my_df()[0])
-                    st.write(my_df()[1])
+                    filtered_df = my_df()[1]
+                    if start_date:
+                        filtered_df = filtered_df.loc[filtered_df['Дата начала'] == start_date]
+                    if end_date:
+                        filtered_df = filtered_df.loc[filtered_df['Дата окончания'] == end_date]
+                    if person_fio_list:
+                        filtered_df = filtered_df.loc[filtered_df['ФИО сотрудника'] == person_fio_list]
+                    if work_type:
+                        filtered_df = filtered_df.loc[filtered_df['Вид работы'] == work_type]
+                    if len(filtered_df) == 0:
+                        st.warning("По выставленным фильтрам события не найдены")
+                    else:
+                        st.write(filtered_df)
     else:
         st.write(my_df()[0])
         st.markdown("<hr />", unsafe_allow_html=True)
