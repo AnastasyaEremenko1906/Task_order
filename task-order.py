@@ -67,17 +67,7 @@ def make_request_non_full():
     df_non_full = df_non_full.loc[:,
                   ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'fio', 'department', 'destination',
                    'district_coef', 'machine_type', 'machine_number', 'any_comment']]
-    df_non_full = df_non_full.rename(columns={'id_event': '№ события',
-                                              'start_dates': 'Дата начала',
-                                              'end_dates': 'Дата окончания',
-                                              'types_of_work': 'Вид работы',
-                                              'fio': 'ФИО сотрудника',
-                                              'department': 'Пункт оправления',
-                                              'destination': 'Пункт назначения',
-                                              'district_coef': 'Районный коэф-т',
-                                              'machine_type': 'Вид техники',
-                                              'machine_number': 'Государственный номер',
-                                              'any_comment': 'Комментарий'})
+    df_non_full = df_non_full.rename(columns=total_dict)
     table_len = len(df_non_full)
     if table_len == 0:
         status = 'Незавершенных событий нет'
@@ -162,6 +152,17 @@ names_in_streamlit = ['№ события', 'Дата начала', 'Дата �
                       'Вид работы', 'ФИО сотрудника', 'Пункт оправления',
                       'Пункт назначения', 'Районный коэф-т', 'Вид техники', 'Государственный номер',
                       'Комментарий']
+total_dict = {'id_event': '№ события',
+              'start_dates': 'Дата начала',
+              'end_dates': 'Дата окончания',
+              'types_of_work': 'Вид работы',
+              'fio': 'ФИО сотрудника',
+              'department': 'Пункт оправления',
+              'destination': 'Пункт назначения',
+              'district_coef': 'Районный коэф-т',
+              'machine_type': 'Вид техники',
+              'machine_number': 'Государственный номер',
+              'any_comment': 'Комментарий'}
 dict_streamlit_to_sql = dict(zip(names_in_streamlit, names_in_sql))
 dict_sql_to_streamlit = dict(zip(names_in_sql, names_in_streamlit))
 
@@ -176,17 +177,7 @@ def my_df():
     df = pd.read_sql(make_request(), connection)
     df = df.loc[:, ['id_event', 'start_dates', 'end_dates', 'types_of_work', 'fio', 'department', 'destination',
                     'district_coef', 'machine_type', 'machine_number', 'any_comment']]
-    df = df.rename(columns={'id_event': '№ события',
-                            'start_dates': 'Дата начала',
-                            'end_dates': 'Дата окончания',
-                            'types_of_work': 'Вид работы',
-                            'fio': 'ФИО сотрудника',
-                            'department': 'Пункт оправления',
-                            'destination': 'Пункт назначения',
-                            'district_coef': 'Районный коэф-т',
-                            'machine_type': 'Вид техники',
-                            'machine_number': 'Государственный номер',
-                            'any_comment': 'Комментарий'})
+    df = df.rename(columns=total_dict)
     table_len = len(df)
     if table_len == 0:
         status = 'Наряд - задание не содержит событий. Для заполнения выберите пункт "Добавить"'
