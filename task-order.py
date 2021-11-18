@@ -31,23 +31,24 @@ def request_append(start_date, end_date, work_type, person_fio_list, department,
                    machine_type, machine_number, any_comment):
     list_of_works = """select id from types_of_work where types_of_work='{}'""".format(work_type)
     id_of_work = pd.read_sql(list_of_works, connection)
-    list_of_fio = """select id_person from fio_person where fio='{}'""".format(person_fio_list)
-    id_of_fio = pd.read_sql(list_of_fio, connection)
-
-    # получаю df из 1 строки и столца; далее извлекаю значение на пересечении строки/столбца для получения № работы
     id_of_work = id_of_work.iat[0, 0]
-    id_of_fio = id_of_fio.iat[0, 0]
+    for selected_name in person_fio_list:
+        list_of_fio = """select id_person from fio_person where fio='{}'""".format(selected_name)
+        id_of_fio = pd.read_sql(list_of_fio, connection)
 
-    query = """INSERT INTO task_order (start_dates, end_dates, work_type, person_fio, department,
-            destination, district_coef, machine_type,machine_number, any_comment) VALUES """
-    query += """('{}','{}','{}','{}','{}','{}','{}', '{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
-                                                                                  int(id_of_fio), department,
-                                                                                  destination,
-                                                                                  district_coef, machine_type,
-                                                                                  machine_number, any_comment)
-    # connection.close()
-    execute_query(connection, query[:-1])
-    st.success('Данные успешно сохранены!')
+        # получаю df из 1 строки и столца; далее извлекаю значение на пересечении строки/столбца для получения № работы
+        id_of_fio = id_of_fio.iat[0, 0]
+
+        query = """INSERT INTO task_order (start_dates, end_dates, work_type, person_fio, department,
+                destination, district_coef, machine_type,machine_number, any_comment) VALUES """
+        query += """('{}','{}','{}','{}','{}','{}','{}', '{}', '{}', '{}'),""".format(start_date, end_date, int(id_of_work),
+                                                                                      int(id_of_fio), department,
+                                                                                      destination,
+                                                                                      district_coef, machine_type,
+                                                                                      machine_number, any_comment)
+        # connection.close()
+        execute_query(connection, query[:-1])
+        st.success('Данные успешно сохранены!')
 
 
 # формирования SQL-запроса (ПОЛУЧЕНИЕ ВСЕЙ инфы в БД)
@@ -230,8 +231,7 @@ def change_data():
             elif select_column == my_table.columns[3]:
                 new_value = st.selectbox("", list_of_works())
             elif select_column == my_table.columns[4]:
-                new_value = st.selectbox("", types_of_work)
-                st.text(new_value)
+                new_value = st.selectbox("", fio_list)
             else:
                 new_value = st.text_input("")
             st.text("")
@@ -248,7 +248,7 @@ def append_data():
 
     st.markdown("<hr />", unsafe_allow_html=True)
 
-    person_fio_list = st.selectbox('Выберите сотрудника: ', fio_list)
+    person_fio_list = st.multiselect('Выберите сотрудника: ', fio_list)
     department = st.text_input('Введите пункт оправления')
     destination = st.text_input('Введите пункт назначения')
 
@@ -304,13 +304,14 @@ st.sidebar.title("Меню работы с наряд - заданием: ")
 main_menu = st.sidebar.selectbox("", option_menu)
 if main_menu == option_menu[0]:
     if my_df()[0] == "Все события: ":
+        st.write(make_request_non_full()[0])
+        st.write(make_request_non_full()[1])
+        st.markdown("<hr />", unsafe_allow_html=True)
+        st.write("**Выберите интересущий фильтр:**")
         choice_filter = st.radio("", ['Показать все события', 'Показать определенные события'])
         if choice_filter == "Показать все события":
             st.write(my_df()[0])
             st.write(my_df()[1])
-            st.markdown("<hr />", unsafe_allow_html=True)
-            st.write(make_request_non_full()[0])
-            st.write(make_request_non_full()[1])
         elif choice_filter == "Показать определенные события":
             st.write("Отфильтруйте события:")
             col1, col2, col3, col4 = st.columns(4)
