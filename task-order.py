@@ -24,6 +24,10 @@ def execute_query(connection, query):
     except psycopg2.OperationalError as e:
         connection.close()
         st.error(f"The error '{e}' occurred")
+    except psycopg2.errors.UniqueViolation:
+        connection.close()
+        st.error('Данное событие уже занесено')
+        st.stop()
 
 
 # формирования SQL-запроса (ДОБАВЛЕНИЕ инфы в БД)
@@ -228,6 +232,7 @@ def change_data():
             st.text("")
             if st.button("Внести изменения"):
                 change_value_sql(event_number, select_column, new_value)
+
                 st.session_state.update_str = "End_edit"
 
 
